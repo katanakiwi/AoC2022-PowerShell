@@ -1,7 +1,7 @@
 set-location "$PSScriptRoot"
 $inputFile = "8sample.txt"
 #$inputFile = "8sampleCustom.txt"
-#$inputFile = "8.txt"
+$inputFile = "8.txt"
 $lines = Get-Content $inputFile
 
 function checkVisibility($a, $b, $array, $visibleArray) {
@@ -106,7 +106,7 @@ function checkAmountLeft($g, $h, $arr) {
 function checkAmountRight($g, $h, $arr) {
     $k = 1
     for($i = ($h+1); $i -lt ($arr[0].length-1); $i++,$k++) {
-        if(checkFirstLessEqualSecond $g $h $i $h $arr) {
+        if(checkFirstLessEqualSecond $g $h $g $i $arr) {
             #write-host "right trees $k"
             break;
         }
@@ -123,7 +123,7 @@ function checkAmountUp($g, $h, $arr) {
     return $i
 }
 function checkAmountDown($g, $h, $arr) {
-    $k = 1
+    $k = 0
     for($i = ($g+1); $i -le ($arr[0].length-1); $i++, $k++) {
         if(checkFirstLessEqualSecond $g $h $i $h $arr) {
             #write-host "down trees $k"
