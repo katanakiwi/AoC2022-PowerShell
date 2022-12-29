@@ -27,11 +27,11 @@ write-host "now visualizing CRT`n"
 $output = ""
 foreach($cycle in (0..(($cycles.Length)-1))){
     if(($cycle % 40) -in (($cycles[$cycle]-1),$cycles[$cycle],($cycles[$cycle]+1))) {
-        $output += "#"
+        $output += "▓▓"
     } else {
-        $output += "."
+        $output += "░░"
     }
-    if((($cycle % 40) -eq 39) -and ($cycle -ge 2)){
+    if((($cycle+1) % 40) -eq 0){
         $output += "`n"
     }
 }
