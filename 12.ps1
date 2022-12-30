@@ -1,6 +1,7 @@
 set-location "$PSScriptRoot"
 $inputFile = "12sample.txt"
 $inputFile = "12.txt"
+#$inputFile = "12_2.txt"
 
 $lines = Get-Content $inputFile
 
@@ -59,6 +60,78 @@ function checkValidMove($a,$b) {
     return $false
 }
 
+function createPaths($startPoint) {
+    $queue = @()
+    $queue += $hashTable[$startPoint]
+    $result = @()
+
+    while($queue.Length -gt 0) {
+        #dequeue first in 
+        $currentVex = $queue[0]
+        if($queue.Length -gt 1) {
+            $queue = $queue[1..$($queue.Length-1)]
+        } else { $queue = @() }
+        
+        if(-not($currentVex.visited)) { #if currentVex not visited yet
+            $xt = $currentVex.x
+            $yt = $currentVex.y
+            $hashTable["$xt,$yt"].visited = $true
+            $result += $currentVex
+
+            #add edges to queue
+            if($currentVex.validMoves.U) {
+                $var = "$($xt),$($yt-1)"
+                if(-not($hashTable["$var"].visited)){
+                    $queue += $hashTable["$var"]
+                    if(-not($hashTable["$var"].parent)) {
+                        $hashTable["$var"].parent = $currentVex
+                    }
+                }
+            }
+            if($currentVex.validMoves.D) {
+                $var = "$($xt),$($yt+1)"
+                if(-not($hashTable["$var"].visited)){
+                    $queue += $hashTable["$var"]
+                    if(-not($hashTable["$var"].parent)) {
+                        $hashTable["$var"].parent = $currentVex
+                    }
+                }
+            }
+            if($currentVex.validMoves.L) {
+                $var = "$($xt-1),$($yt)"
+                if(-not($hashTable["$var"].visited)){
+                    $queue += $hashTable["$var"]
+                    if(-not($hashTable["$var"].parent)) {
+                        $hashTable["$var"].parent = $currentVex
+                    }
+                }
+            }
+            if($currentVex.validMoves.R) {
+                $var = "$($xt+1),$($yt)"
+                if(-not($hashTable["$var"].visited)){
+                    $queue += $hashTable["$var"]
+                    if(-not($hashTable["$var"].parent)) {
+                        $hashTable["$var"].parent = $currentVex
+                    }
+                }
+            }
+        }
+    }
+}
+
+function drawMap {
+    Write-Host ""
+    for($t=0; $t -lt $height; $t++) {
+        $output = ""
+        for($s=0; $s -lt $width; $s++) {
+            $output += $hashTable["$s,$t"].drawIcon
+        }
+        write-host $output
+    }
+    Write-Host ""
+}
+
+
 foreach($i in (0..($lines.Length-1))) {
     foreach($j in (0..($lines[0].Length-1))) {
         $key = "$j,$i"
@@ -78,7 +151,15 @@ foreach($i in (0..($lines.Length-1))) {
             write-host "End at $i,$j"
             $end = "$j,$i"
             $index.letter = "z"
+        } 
+        <# added for visualisation of 'b' regions
+        if($index.letter -ceq "a") {
+            $index.drawIcon = "░"
+        } 
+        if($index.letter -ceq "b") {
+            $index.drawIcon = "▓"
         }
+        #>
 
         $index.height = [int][char]$index.letter - 97 #maps a to 0
         $index.visited = $false
@@ -91,84 +172,30 @@ foreach($index in $hashTable.keys) {
     $hashtable[$index].validMoves = findValidMoves $hashTable["$index"] $hashTable
 }
 
-$queue = @()
-$queue += $hashTable[$start]
-$result = @()
+function findPathLength () {
 
-while($queue.Length -gt 0) {
-    #dequeue first in 
-    $currentVex = $queue[0]
-    if($queue.Length -gt 1) {
-        $queue = $queue[1..$($queue.Length-1)]
-    } else { $queue = @() }
-    
-    if(-not($currentVex.visited)) { #if currentVex not visited yet
-        $xt = $currentVex.x
-        $yt = $currentVex.y
-        $hashTable["$xt,$yt"].visited = $true
-        $result += $currentVex
-
-        #add edges to queue
-        if($currentVex.validMoves.U) {
-            $var = "$($xt),$($yt-1)"
-            if(-not($hashTable["$var"].visited)){
-                $queue += $hashTable["$var"]
-                if(-not($hashTable["$var"].parent)) {
-                    $hashTable["$var"].parent = $currentVex
-                }
-            }
-        }
-        if($currentVex.validMoves.D) {
-            $var = "$($xt),$($yt+1)"
-            if(-not($hashTable["$var"].visited)){
-                $queue += $hashTable["$var"]
-                if(-not($hashTable["$var"].parent)) {
-                    $hashTable["$var"].parent = $currentVex
-                }
-            }
-        }
-        if($currentVex.validMoves.L) {
-            $var = "$($xt-1),$($yt)"
-            if(-not($hashTable["$var"].visited)){
-                $queue += $hashTable["$var"]
-                if(-not($hashTable["$var"].parent)) {
-                    $hashTable["$var"].parent = $currentVex
-                }
-            }
-        }
-        if($currentVex.validMoves.R) {
-            $var = "$($xt+1),$($yt)"
-            if(-not($hashTable["$var"].visited)){
-                $queue += $hashTable["$var"]
-                if(-not($hashTable["$var"].parent)) {
-                    $hashTable["$var"].parent = $currentVex
-                }
-            }
-        }
-    }
 }
 
-function drawMap {
-    Write-Host ""
-    for($t=0; $t -lt $height; $t++) {
-        $output = ""
-        for($s=0; $s -lt $width; $s++) {
-            $output += $hashTable["$s,$t"].drawIcon
-        }
-        write-host $output
-    }
-    Write-Host ""
-}
-
+write-host "starting part a"
+createPaths $start
 write-host "finding shortest path..."
 $pathlength = 0
 $revPath = $hashTable[$end]
+$absoluteShortest = 0
+$shortestNotFound = $true
 while($($revPath.parent) -ne "start") {
+    if(($revPath.parent.letter -eq "a") -and ($shortestNotFound)) {
+        #this trick only works due to the path needing to cross a ridge of b.
+        #for a general solution the criteria should be swapped and a route from 'E' to 'a' should be found.
+        #note that this changes what steps one is allowed to take
+        $absoluteShortest = $pathlength+1
+        $shortestNotFound = $false
+    }
     $pathLength += 1
     $hashTable["$($revPath.x),$($revPath.y)"].drawIcon = "X"
     $revPath = $revPath.parent
-    #drawMap
 }
 $hashTable["$start"].drawIcon = "X"
 drawmap
-write-host "Pathlength: $pathlength"
+write-host "Pathlength from starting point $start : $pathlength"
+write-host "Absolute shortest starting point: $absoluteShortest"
